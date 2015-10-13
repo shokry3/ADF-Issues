@@ -1,0 +1,51 @@
+package eg.com.test;
+
+
+import javax.annotation.PostConstruct;
+
+import javax.servlet.ServletContext;
+
+import oracle.adf.model.BindingContext;
+import oracle.adf.model.binding.DCIteratorBinding;
+import oracle.adf.share.ADFContext;
+
+import oracle.adf.view.rich.component.rich.layout.RichPanelLabelAndMessage;
+import oracle.adf.view.rich.component.rich.output.RichOutputText;
+import oracle.adf.view.rich.context.AdfFacesContext;
+
+
+
+public class SurveyTaskBean {
+    private RichTable surveyDetailTable;
+    private UploadedFile file;
+    private List<UploadedFile> fileImage;
+    private RichTable surveyImagesTable;
+    private String currentFile;
+    private InputStream fileIs;
+    private InputStream imageIs;
+    private RichPanelLabelAndMessage repFileNameText;
+    private RichSelectOneChoice internalSurveyorList;
+    private RichSelectOneChoice externalSurveyorList;
+    private RichPopup uploadImagesPopup;
+
+    public SurveyTaskBean() {
+        super();
+    }
+
+	//in this init method we share the current used data control in the current session for using in Java servlets or els.
+    @PostConstruct
+    public void init() {
+        BindingContext cont = BindingContext.getCurrent();
+        ADFContext.getCurrent().getSessionScope().put("NLDataControlFrame",
+                                                      cont.getCurrentDataControlFrame());
+    }
+
+    public void setRepFileNameText(RichPanelLabelAndMessage currentFileText) {
+        this.repFileNameText = currentFileText;
+    }
+
+    public RichPanelLabelAndMessage getRepFileNameText() {
+        return repFileNameText;
+    }
+
+}
