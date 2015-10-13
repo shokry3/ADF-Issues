@@ -1,0 +1,160 @@
+package eg.com.allianz.azqs.view.managed.nonLife.survey;
+
+import eg.com.allianz.azqs.model.azqsNL.survey.uviews.SurvdSurveyDetailsViewRowImpl;
+import eg.com.allianz.azqs.model.azqsNL.survey.uviews.SurvdSurveyImagesViewImpl;
+import eg.com.allianz.azqs.model.azqsNL.survey.uviews.SurvdSurveyImagesViewRowImpl;
+import eg.com.allianz.azqs.view.utils.ADFUtils;
+
+import eg.com.allianz.azqs.view.utils.JSFUtils;
+
+import java.awt.image.BufferedImage;
+
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+
+import java.util.List;
+
+import javax.annotation.PostConstruct;
+
+import javax.faces.application.FacesMessage;
+import javax.faces.component.UIComponent;
+import javax.faces.context.FacesContext;
+import javax.faces.event.ValueChangeEvent;
+
+import javax.imageio.ImageIO;
+
+import javax.servlet.ServletContext;
+
+import oracle.adf.model.BindingContext;
+import oracle.adf.model.binding.DCIteratorBinding;
+import oracle.adf.share.ADFContext;
+import oracle.adf.view.rich.component.rich.RichPopup;
+import oracle.adf.view.rich.component.rich.data.RichTable;
+
+
+import oracle.adf.view.rich.context.AdfFacesContext;
+
+import oracle.adf.view.rich.event.PopupFetchEvent;
+
+import oracle.adf.view.rich.util.ResetUtils;
+
+import oracle.jbo.RowSetIterator;
+import oracle.jbo.domain.Number;
+
+import org.apache.myfaces.trinidad.event.LaunchEvent;
+import org.apache.myfaces.trinidad.event.ReturnEvent;
+import org.apache.myfaces.trinidad.model.UploadedFile;
+
+public class SurveyTaskBean {
+	
+    private List<UploadedFile> fileImage;
+    private RichTable surveyImagesTable;
+    private RichPopup uploadImagesPopup;
+
+    public SurveyTaskBean() {
+        super();
+    }
+
+    public String uploadImage() {
+
+        if (getFileImage() != null) {
+            //UploadedFile myfile = this.getFileImage();
+            List<UploadedFile> uploadedFiles = this.getFileImage();
+
+            FileOutputStream out;
+            String fileName;
+            FacesContext fctx = FacesContext.getCurrentInstance();
+
+            //Get Non Life documents directory path
+            String imageDirPath =
+                fctx.getExternalContext().getInitParameter("nonlife_doc_path");
+
+            Number OfferId =
+                (Number)ADFUtils.getBoundAttributeValue("OfferId");
+
+            //get image iterator from data binding.
+            DCIteratorBinding surveyImageIterator =
+                ADFUtils.findIterator("SurvdSurveyImagesView1Iterator");
+            SurvdSurveyImagesViewImpl imageView =
+                (SurvdSurveyImagesViewImpl)surveyImageIterator.getViewObject();
+
+            //Create Offer Folder with image folder under the documents path if not exist.
+            File dirFile =
+                new File(imageDirPath + OfferId.toString() + "/image/");
+            if (!dirFile.exists()) {
+                dirFile.mkdirs();
+            }
+
+            for (UploadedFile myfile : uploadedFiles) {
+
+                if (myfile != null && myfile.getLength() < 6291456) {
+
+                    fileName = dirFile.getPath() + "/" + myfile.getFilename();
+                    try {
+                        out = new FileOutputStream(fileName);
+                        InputStream in = myfile.getInputStream();
+                        for (int bytes = 0; bytes < myfile.getLength();
+                             bytes++) {
+                            out.write(in.read());
+                        }
+                        in.close();
+                        out.close();
+
+                        if (imageView != null) {
+                            SurvdSurveyImagesViewRowImpl imageRow =
+                                (SurvdSurveyImagesViewRowImpl)imageView.createRow();
+                            imageRow.setImageName(myfile.getFilename());
+                            imageRow.setImageRef(myfile.getFilename());
+                            imageView.insertRow(imageRow);
+                        }
+
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                    System.out.println(fileName);
+                }
+            }
+            AdfFacesContext.getCurrentInstance().addPartialTarget(surveyImagesTable);
+            uploadImagesPopup.hide();
+        } else {
+            FacesMessage message =
+                new FacesMessage("No File Chosen To Upload.");
+            message.setSeverity(FacesMessage.SEVERITY_WARN);
+            FacesContext.getCurrentInstance().addMessage(null, message);
+        }
+        setFileImage(null);
+        return null;
+    }
+
+
+    public void setFileImage(List<UploadedFile> fileImage) {
+        this.fileImage = fileImage;
+    }
+
+    public List<UploadedFile> getFileImage() {
+        return fileImage;
+    }
+
+    public void setSurveyImagesTable(RichTable surveyImagesTable) {
+        this.surveyImagesTable = surveyImagesTable;
+    }
+
+    public RichTable getSurveyImagesTable() {
+        return surveyImagesTable;
+    }
+
+    public void addImageFilesListener(ReturnEvent returnEvent) {
+
+        AdfFacesContext.getCurrentInstance().addPartialTarget(surveyImagesTable);
+    }
+
+    public void setUploadImagesPopup(RichPopup uploadImagesPopup) {
+        this.uploadImagesPopup = uploadImagesPopup;
+    }
+
+    public RichPopup getUploadImagesPopup() {
+        return uploadImagesPopup;
+    }
+}
